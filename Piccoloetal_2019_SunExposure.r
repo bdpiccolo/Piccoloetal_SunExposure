@@ -847,7 +847,7 @@ TABLE1 <- full_join(Table1, TABLE1_ttP_DF, by="Measures") %>%
 	mutate(Parameter = T1ParamKey$TableLabel) %>%
 	dplyr::select(Parameter, Week3, Week15, P)
 	
-knitr::kable(TABLE1)	
+kable(TABLE1)	
 
         ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     Figures 3 & 4     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##	
 
@@ -948,7 +948,7 @@ colnames(TABLE2)[!(colnames(TABLE2) %in% "Parameter")] <- c(
 	"Serum 25(OH)D"
 )
 
-knitr::kable(TABLE2)
+kable(TABLE2)
 
         ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     Predict serum 25(OH)D using modified Hall model     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##	
 
@@ -1025,6 +1025,8 @@ LModDAT$P25noSdiff_JWDWE <- LModDAT$Pred25noS_JWDWE - LModDAT$s25OHD15
 
 ## Calculate mean differences between predicted and actual 25(OH)D
 LMod_wSEAS_diffmelt <- LModDAT %>% dplyr::select(P25diff_Jsum, P25diff_Jperreport, P25diff_JWDWE) %>% gather(Predictions, value)
+
+## Calculate mean, SE and assess t-test to test whether differences does not equal zero. 
 Table3wSEAScalc <- LMod_wSEAS_diffmelt %>%
 	group_by(Predictions) %>% 
 	summarise(
@@ -1033,26 +1035,38 @@ Table3wSEAScalc <- LMod_wSEAS_diffmelt %>%
 		BiasSEM = round(sd(value)/sqrt(length(value)),2),
 		"Tvalue" = as.character(round(t.test(value, mu=0)$statistic, 2)),
 		P = ifelse(t.test(value, mu=0)$p.value < 0.0001, "<0.0001", ">0.0001")
-	)  
+	)
+	
+## Format table to match format in manuscript
 Table3wSEAS <- Table3wSEAScalc %>%	mutate(
 		"AverageBias1" = paste0(AvgBias, " (", BiasSEM, ")"),
 		Season = rep("wSeason",length=3)
 	) %>% 
 	dplyr::select_(.dots=c("Predictions", "AverageBias1", "Tvalue", "P","Season")) %>%
 	as.data.frame()
+
+## Add row to distinguish 'With Season' data.
 Table3wSEAS <- rbind(Table3wSEAS, data.frame(Predictions="With Season2", AverageBias1="-", Tvalue="-", P="-", Season="wSeason"))
-## Test whether there are differences by sun exposure calculations
+
+## Test whether there are differences among sun exposure calculations
 LMod_wSEAS_diffmelt$Prediction <- factor(LMod_wSEAS_diffmelt$Prediction)
+## run ANOVA
 wSEASaov <- aov(value ~ Prediction, data=LMod_wSEAS_diffmelt)
+## Run Tukey test
 wSEAS_Tuk <- glht(wSEASaov, linfct = multcomp::mcp(Prediction = "Tukey"))
+## Determine letter differences
 wSEAS_Tuk_letters <- cld(wSEAS_Tuk)$mcletters$Letters
+## Append letters to AverageBias1 column
 for(i in names(wSEAS_Tuk_letters)) {
 	Table3wSEAS[Table3wSEAS$Predictions %in% i,"AverageBias1"] <- 
 		paste0(Table3wSEAS[Table3wSEAS$Predictions %in% i,"AverageBias1"], wSEAS_Tuk_letters[i])
 }
 
-
+## Hall model without season
+## Calculate mean differences between predicted and actual 25(OH)D
 LMod_noSEAS_diffmelt <- LModDAT %>% dplyr::select(P25noSdiff_Jsum, P25noSdiff_Jperreport, P25noSdiff_JWDWE) %>% gather(Predictions, value)
+
+## Calculate mean, SE and assess t-test to test whether differences does not equal zero. 
 Table3noSEAScalc <- LMod_noSEAS_diffmelt %>%
 	group_by(Predictions) %>% 
 	summarise(
@@ -1066,23 +1080,35 @@ Table3noSEAScalc <- LMod_noSEAS_diffmelt %>%
 ## How much greater are the predictions without season compared to predictions with season
 Table3noSEAScalc$AvgBias/Table3wSEAScalc$AvgBias
 	
+## Format table to match format in manuscript
 Table3noSEAS <- Table3noSEAScalc  %>% mutate(
 		"AverageBias1" = paste0(AvgBias, " (", BiasSEM, ")"),
 		Season = rep("woutSeason",length=3)
 	) %>% 
 	dplyr::select_(.dots=c("Predictions", "AverageBias1", "Tvalue", "P","Season")) %>%
 	as.data.frame()
+	
+## Add row to distinguish 'With Season' data.
 Table3noSEAS <- rbind(Table3noSEAS, data.frame(Predictions="Without Season3", AverageBias1="-", Tvalue="-", P="-", Season="woutSeason"))
 ## Test whether there are differences by sun exposure calculations
 LMod_noSEAS_diffmelt$Prediction <- factor(LMod_noSEAS_diffmelt$Prediction)
+## run ANOVA
 noSEASaov <- aov(value ~ Prediction, data=LMod_noSEAS_diffmelt)
+## run Tukey
 noSEAS_Tuk <- glht(noSEASaov, linfct = multcomp::mcp(Prediction = "Tukey"))
+## Determine letter differences
 noSEAS_Tuk_letters <- cld(noSEAS_Tuk)$mcletters$Letters
+## Append letters to AverageBias1 column
 for(i in names(noSEAS_Tuk_letters)) {
 	Table3noSEAS[Table3noSEAS$Predictions %in% i,"AverageBias1"] <- 
 		paste0(Table3noSEAS[Table3noSEAS$Predictions %in% i,"AverageBias1"], noSEAS_Tuk_letters[i])
 }
+
+## rbind with and without tables
 Table3 <- rbind(Table3wSEAS, Table3noSEAS)
+
+## Change row labels to match manuscript
+## Set levels of factors and then sort based on factor order.
 TABLE3 <- Table3 %>% mutate(
 		Predictions = factor(ifelse(Predictions %in%  c("P25diff_Jperreport","P25noSdiff_Jperreport"), "Average Recorded Sun Exposure5, J",
 			ifelse(Predictions %in% c("P25diff_Jsum","P25noSdiff_Jsum"), "Total Sun Exposure4, J",
@@ -1096,9 +1122,11 @@ TABLE3 <- Table3 %>% mutate(
 	arrange(Season, Predictions) %>%
 	dplyr::select(-Season) 
 
+## Set column names to match manuscript
 colnames(TABLE3) <- c("Model", "Average Bias1", "T-value2", "P-value")
 
-knitr::kable(TABLE3)
+## View table
+kable(TABLE3)
 
         ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     Table 4     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##	
 
@@ -1128,25 +1156,33 @@ vif(HallmodT4)
 # W15HF      1.053212  1        1.026261
 # Season     1.252698  3        1.038264
 
-
+## Extract coefficient matrix
 HallmodT4summary <- as.data.frame(coef(summary(HallmodT4)))
+## Make a column for R2, but add NAs at this stage
 HallmodT4summary$R2 <- NA
+## Make separate column for parameters
 HallmodT4summary$Parameters <- rownames(HallmodT4summary)
+## Update column names so there are no non-standard values
 colnames(HallmodT4summary)[colnames(HallmodT4summary) %in% c("Std. Error","t value","Pr(>|t|)")] <-c("SE", "tval", "P")
+## Round all data to match manuscript
 HallmodT4summary$Estimate <- ifelse(HallmodT4summary$Parameters == "sumUVB", signif(HallmodT4summary$Estimate, 1), round(HallmodT4summary$Estimate, 2))
 HallmodT4summary[,"SE"] <- ifelse(HallmodT4summary$Parameters == "sumUVB", signif(HallmodT4summary[,"SE"], 1), round(HallmodT4summary[,"SE"], 2))
 HallmodT4summary[,"tval"] <- round(HallmodT4summary[,"tval"],2)
 HallmodT4summary[,"P"] <- round(HallmodT4summary[,"P"],3)
+## Create column to differentiate Hall model from Backwards Stepwise regression
 HallmodT4summary$Model <- rep("HallMod", nrow(HallmodT4summary))
 HallmodT4summary <- rbind(HallmodT4summary, 
+## Add 2 rows (Winter reference, and R2) to match manuscript format
 	data.frame("Estimate"=c(NA, NA), "SE"=c(NA, NA),"tval"=c(NA, NA), "P"=c(0, NA),R2=c(NA,round(summary(HallmodT4)$r.squared,3)), Parameters=c("SeasonWinter", "Hall Mod"),Model=rep("HallMod", 2)))
 
-## Backwards Stepwise Regression
+## LM with all parameters
 allfit <- lm(s25OHD15 ~ sumUVB + dintakei15 + W15HF + wt15 + pctbf15 + fatkg15 + leankg15 + 
 	androidf15 + gynoidf15 + iaat15 + bmi15 + waist15, data=Table4data)
 summary(allfit)
+## VIF
 vif(allfit)
-# Backwards
+
+# Backwards Stepwise Regression
 stepresults <- stepAIC(allfit, direction="backward")
 summary(stepresults)
 vif(stepresults)
@@ -1166,19 +1202,29 @@ vif(BackSteplm, data=Table4data)
   # sumUVB    W15HF  fatkg15 leankg15   iaat15 
 # 1.126927 1.073425 1.246162 1.179470 1.090310 
 
+## Extract coefficient matrix
 BackStepT4summary <- as.data.frame(coef(summary(BackSteplm)))
+## Make a column for R2, but add NAs at this stage
 BackStepT4summary$R2 <- NA
+## Make separate column for parameters
 BackStepT4summary$Parameters <- rownames(BackStepT4summary)
+## Update column names so there are no non-standard values
 colnames(BackStepT4summary)[colnames(BackStepT4summary) %in% c("Std. Error","t value","Pr(>|t|)")] <-c("SE", "tval", "P")
+## Round all data to match manuscript
 BackStepT4summary$Estimate <- ifelse(BackStepT4summary$Parameters == "sumUVB", signif(BackStepT4summary$Estimate, 1), round(BackStepT4summary$Estimate, 2))
 BackStepT4summary[,"SE"] <- ifelse(BackStepT4summary$Parameters == "sumUVB", signif(BackStepT4summary[,"SE"], 1), round(BackStepT4summary[,"SE"], 2))
 BackStepT4summary[,"tval"] <- round(BackStepT4summary[,"tval"],2)
 BackStepT4summary[,"P"] <- round(BackStepT4summary[,"P"],3)
+## Create column to differentiate Hall model from Backwards Stepwise regression
 BackStepT4summary$Model <- rep("BackStep", nrow(BackStepT4summary))
+## Add single row for R2 to match manuscript format
 BackStepT4summary <- rbind(BackStepT4summary, 
 	data.frame("Estimate"=NA, "SE"=NA,"tval"=NA, "P"=NA,R2=round(summary(BackSteplm)$r.squared,3), Parameters="Back Step",Model="BackStep"))
 
+## rbind tables
 Table4 <- rbind(HallmodT4summary, BackStepT4summary)
+
+## Format table to match manuscript
 TABLE4 <- Table4 %>% 
 	mutate(
 		Estimate = ifelse(Estimate %in% NA, "-", as.character(Estimate)),
@@ -1213,9 +1259,12 @@ TABLE4 <- Table4 %>%
 	mutate(Estimate = gsub("\\- \\(\\-\\)", "-", Estimate)) %>% 
 	arrange(Model, Parameters) %>%
 	dplyr::select(Parameters, Estimate, tval, P, R2)
+	
+## Update colnames to match manuscript
 colnames(TABLE4) <- c("Model", "Coefficient Estimate","t-value","P","R2")	
 
-knitr::kable(TABLE4)
+## View Table
+kable(TABLE4)
 
         ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     Table 5     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##	
 
@@ -1229,15 +1278,22 @@ Basefit <- lm(s25OHD15 ~ sumUVB + W15HF, data=Table4data)
 summary(Basefit)
 vif(Basefit)
 
+## Extract coefficient matrix
 BasefitT5summary <- as.data.frame(coef(summary(Basefit)))
+## Make a column for R2, but add NAs at this stage
 BasefitT5summary$R2 <- NA
+## Make separate column for parameters
 BasefitT5summary$Parameters <- rownames(BasefitT5summary)
+## Update column names so there are no non-standard values
 colnames(BasefitT5summary)[colnames(BasefitT5summary) %in% c("Std. Error","t value","Pr(>|t|)")] <-c("SE", "tval", "P")
+## Round all data to match manuscript
 BasefitT5summary$Estimate <- ifelse(BasefitT5summary$Parameters == "sumUVB", signif(BasefitT5summary$Estimate, 1), round(BasefitT5summary$Estimate, 2))
 BasefitT5summary[,"SE"] <- ifelse(BasefitT5summary$Parameters == "sumUVB", signif(BasefitT5summary[,"SE"], 1), round(BasefitT5summary[,"SE"], 2))
 BasefitT5summary[,"tval"] <- round(BasefitT5summary[,"tval"],2)
 BasefitT5summary[,"P"] <- round(BasefitT5summary[,"P"],3)
+## Create column to differentiate models from each other
 BasefitT5summary$Model <- rep("Base", nrow(BasefitT5summary))
+## Add single row for R2 to match manuscript format
 BasefitT5summary <- rbind(BasefitT5summary, 
 	data.frame("Estimate"=NA, "SE"=NA,"tval"=NA, "P"=NA,R2=round(summary(Basefit)$r.squared,3), Parameters="Base",Model="Base"))
 
@@ -1246,15 +1302,22 @@ IAATfit <- lm(s25OHD15 ~ sumUVB + W15HF + iaat15, data=Table4data)
 summary(IAATfit)
 vif(IAATfit)
 
+## Extract coefficient matrix
 iaatfitT5summary <- as.data.frame(coef(summary(IAATfit)))
+## Make a column for R2, but add NAs at this stage
 iaatfitT5summary$R2 <- NA
+## Make separate column for parameters
 iaatfitT5summary$Parameters <- rownames(iaatfitT5summary)
+## Update column names so there are no non-standard values
 colnames(iaatfitT5summary)[colnames(iaatfitT5summary) %in% c("Std. Error","t value","Pr(>|t|)")] <-c("SE", "tval", "P")
+## Round all data to match manuscript
 iaatfitT5summary$Estimate <- ifelse(iaatfitT5summary$Parameters == "sumUVB", signif(iaatfitT5summary$Estimate, 1), round(iaatfitT5summary$Estimate, 2))
 iaatfitT5summary[,"SE"] <- ifelse(iaatfitT5summary$Parameters == "sumUVB", signif(iaatfitT5summary[,"SE"], 1), round(iaatfitT5summary[,"SE"], 2))
 iaatfitT5summary[,"tval"] <- round(iaatfitT5summary[,"tval"],2)
 iaatfitT5summary[,"P"] <- round(iaatfitT5summary[,"P"],3)
+## Create column to differentiate models from each other
 iaatfitT5summary$Model <- rep("iaat", nrow(iaatfitT5summary))
+## Add single row for R2 to match manuscript format
 iaatfitT5summary <- rbind(iaatfitT5summary, 
 	data.frame("Estimate"=NA, "SE"=NA,"tval"=NA, "P"=NA,R2=round(summary(IAATfit)$r.squared,3), Parameters="iaat",Model="iaat"))
 
@@ -1263,15 +1326,22 @@ Leanfit <- lm(s25OHD15 ~ sumUVB + W15HF + leankg15, data=Table4data)
 summary(Leanfit)
 vif(Leanfit)
 
+## Extract coefficient matrix
 LeanfitT5summary <- as.data.frame(coef(summary(Leanfit)))
+## Make a column for R2, but add NAs at this stage
 LeanfitT5summary$R2 <- NA
+## Make separate column for parameters
 LeanfitT5summary$Parameters <- rownames(LeanfitT5summary)
+## Update column names so there are no non-standard values
 colnames(LeanfitT5summary)[colnames(LeanfitT5summary) %in% c("Std. Error","t value","Pr(>|t|)")] <-c("SE", "tval", "P")
+## Round all data to match manuscript
 LeanfitT5summary$Estimate <- ifelse(LeanfitT5summary$Parameters == "sumUVB", signif(LeanfitT5summary$Estimate, 1), round(LeanfitT5summary$Estimate, 2))
 LeanfitT5summary[,"SE"] <- ifelse(LeanfitT5summary$Parameters == "sumUVB", signif(LeanfitT5summary[,"SE"], 1), round(LeanfitT5summary[,"SE"], 2))
 LeanfitT5summary[,"tval"] <- round(LeanfitT5summary[,"tval"],2)
 LeanfitT5summary[,"P"] <- round(LeanfitT5summary[,"P"],3)
+## Create column to differentiate models from each other
 LeanfitT5summary$Model <- rep("Lean", nrow(LeanfitT5summary))
+## Add single row for R2 to match manuscript format
 LeanfitT5summary <- rbind(LeanfitT5summary, 
 	data.frame("Estimate"=NA, "SE"=NA,"tval"=NA, "P"=NA,R2=round(summary(Leanfit)$r.squared,3), Parameters="Lean",Model="Lean"))
 
@@ -1280,15 +1350,22 @@ WCfit <- lm(s25OHD15 ~ sumUVB + W15HF + waist15, data=Table4data)
 summary(WCfit)
 vif(WCfit)
 
+## Extract coefficient matrix
 WCfitT5summary <- as.data.frame(coef(summary(WCfit)))
+## Make a column for R2, but add NAs at this stage
 WCfitT5summary$R2 <- NA
+## Make separate column for parameters
 WCfitT5summary$Parameters <- rownames(WCfitT5summary)
+## Update column names so there are no non-standard values
 colnames(WCfitT5summary)[colnames(WCfitT5summary) %in% c("Std. Error","t value","Pr(>|t|)")] <-c("SE", "tval", "P")
+## Round all data to match manuscript
 WCfitT5summary$Estimate <- ifelse(WCfitT5summary$Parameters == "sumUVB", signif(WCfitT5summary$Estimate, 1), round(WCfitT5summary$Estimate, 2))
 WCfitT5summary[,"SE"] <- ifelse(WCfitT5summary$Parameters == "sumUVB", signif(WCfitT5summary[,"SE"], 1), round(WCfitT5summary[,"SE"], 2))
 WCfitT5summary[,"tval"] <- round(WCfitT5summary[,"tval"],2)
 WCfitT5summary[,"P"] <- round(WCfitT5summary[,"P"],3)
+## Create column to differentiate models from each other
 WCfitT5summary$Model <- rep("WC", nrow(WCfitT5summary))
+## Add single row for R2 to match manuscript format
 WCfitT5summary <- rbind(WCfitT5summary, 
 	data.frame("Estimate"=NA, "SE"=NA,"tval"=NA, "P"=NA,R2=round(summary(WCfit)$r.squared,3), Parameters="WC",Model="WC"))
 
@@ -1297,20 +1374,29 @@ Fatfit <- lm(s25OHD15 ~ sumUVB + W15HF + fatkg15, data=Table4data)
 summary(Fatfit)
 vif(Fatfit)
 
+## Extract coefficient matrix
 FatfitT5summary <- as.data.frame(coef(summary(Fatfit)))
+## Make a column for R2, but add NAs at this stage
 FatfitT5summary$R2 <- NA
+## Make separate column for parameters
 FatfitT5summary$Parameters <- rownames(FatfitT5summary)
+## Update column names so there are no non-standard values
 colnames(FatfitT5summary)[colnames(FatfitT5summary) %in% c("Std. Error","t value","Pr(>|t|)")] <-c("SE", "tval", "P")
+## Round all data to match manuscript
 FatfitT5summary$Estimate <- ifelse(FatfitT5summary$Parameters == "sumUVB", signif(FatfitT5summary$Estimate, 1), round(FatfitT5summary$Estimate, 2))
 FatfitT5summary[,"SE"] <- ifelse(FatfitT5summary$Parameters == "sumUVB", signif(FatfitT5summary[,"SE"], 1), round(FatfitT5summary[,"SE"], 2))
 FatfitT5summary[,"tval"] <- round(FatfitT5summary[,"tval"],2)
 FatfitT5summary[,"P"] <- round(FatfitT5summary[,"P"],3)
+## Create column to differentiate models from each other
 FatfitT5summary$Model <- rep("Fat", nrow(FatfitT5summary))
+## Add single row for R2 to match manuscript format
 FatfitT5summary <- rbind(FatfitT5summary, 
 	data.frame("Estimate"=NA, "SE"=NA,"tval"=NA, "P"=NA,R2=round(summary(Fatfit)$r.squared,3), Parameters="Fat",Model="Fat"))
 
-
+## rbind tables
 Table5 <- rbind(BasefitT5summary,iaatfitT5summary, LeanfitT5summary,WCfitT5summary, FatfitT5summary)
+
+## Format table to match manuscript
 TABLE5 <- Table5 %>% 
 	mutate(
 		Estimate = ifelse(Estimate %in% NA, "-", as.character(Estimate)),
@@ -1345,15 +1431,20 @@ TABLE5 <- Table5 %>%
 	mutate(Estimate = gsub("\\- \\(\\-\\)", "-", Estimate)) %>% 
 	arrange(Model, Parameters) %>%
 	dplyr::select(Parameters, Estimate, tval, P, R2)
+	
+## Update colnames to match manuscript
 colnames(TABLE5) <- c("Model", "Coefficient Estimate","t-value","P","R2")	
 
-knitr::kable(TABLE5)
+## View Table
+kable(TABLE5)
 
 
 
 
 
 
+
+        ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     R and Package versions     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##	
 
 
 sessionInfo()
