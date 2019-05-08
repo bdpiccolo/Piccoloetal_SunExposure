@@ -1,4 +1,4 @@
-# Reproduction and data for Sun Exposure Manuscript
+# Reproduction and data for Sun Exposure manuscript
 
 Circulating 25(OH)D Concentrations in Overweight and Obese Adults is Explained by Sun Exposure, Skin Reflectance, and Body Composition
 
