@@ -171,11 +171,11 @@ require(knitr)
         ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     Importing Data      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##	
 
 # Set working directory
-setwd("C:/Users/piccolobriand/Documents/WHNRC/Van Loan/Sun Exposure/")
+setwd()
 
 ## Data collected from Sun Exposure Diaries and clothing key (Figure 2).
 ## Data from logs were inputed in Microsoft Access, then converted to Excel format, and then converted to csv.
-SEDataRAW <- read.csv("./CDN/Updates/github/SunExposureDiaryData5619.csv", header=TRUE, comment.char = "", check.names = FALSE)
+SEDataRAW <- read.csv("./data/SunExposureDiaryData5619.csv", header=TRUE, comment.char = "", check.names = FALSE)
 
 ## Remove data with no information
 SEDataRAW <- SEDataRAW[,apply(SEDataRAW, 2, function(x) !(sum(x %in% NA) == nrow(SEDataRAW)))]
@@ -205,7 +205,7 @@ colnames(SEDataRAW)
 ######### Key
 
 ## Import Metadata, skin reflectance, and body composition data.
-MetaDAT <- read.csv("./CDN/Updates/github/Meta_SkinR_BodyCData5619.csv", header=TRUE, comment.char = "", check.names = FALSE)
+MetaDAT <- read.csv("./data/Meta_SkinR_BodyCData5619.csv", header=TRUE, comment.char = "", check.names = FALSE)
 
 ######### Key
 colnames(MetaDAT)
@@ -368,7 +368,7 @@ SLcities <- unique(SEDataRAW[,c("DL", "State")])
 SLcities
 
 ## Import csv from https://simplemaps.com/data/us-cities.
-cityDAT <- read.csv("./CDN/Updates/github/uscitiesv1.5.csv", header=TRUE, comment.char = "", check.names = FALSE)
+cityDAT <- read.csv("./data/uscitiesv1.5.csv", header=TRUE, comment.char = "", check.names = FALSE)
 
 ## Identify cities that do not match
 UScities <- SLcities[tolower(SLcities$DL) %in% tolower(as.character(cityDAT$city)),]
@@ -450,7 +450,7 @@ for(i in lnglatDAT$DL) {
 }
 
 ## Import UV-B Monitoring Climatological and Research Network Location Metadata
-UVBMRPmeta <- read.csv("./CDN/Updates/github/networkList.csv", header=TRUE, comment.char = "", check.names = FALSE)
+UVBMRPmeta <- read.csv("./data/networkList.csv", header=TRUE, comment.char = "", check.names = FALSE)
 ## Create new columns with numerical data for longitude, latitude, and elevation.
 UVBMRPmeta$lng <- gsub(" W", "", as.character(UVBMRPmeta$Longitude))
 UVBMRPmeta$lng <- gsub(" E", "", as.character(UVBMRPmeta$lng))
@@ -504,7 +504,7 @@ range(as.Date(SEDataRAW$DDate, format = "%m/%d/%Y"))
 DAVISyears <- c("040507 - 070507","070507 - 100507","100507 - 010408","010408 - 040508","040508 - 070508",
 	"070508 - 100508","100508 - 010509","010509 - 040509","040509 - 070509","070509 - 082509")
 Davis_CS_Data <- lapply(DAVISyears, function(x) {
-	DAT <- read.csv(paste0("./CDN/Updates/github/CA01 ", x, ".csv"), header=TRUE, comment.char = "", check.names = FALSE)
+	DAT <- read.csv(paste0("./data/CA01 ", x, ".csv"), header=TRUE, comment.char = "", check.names = FALSE)
 	## Format date so it is consistent across locations
 	DAT[["YYYY-MM-DD HH:MM:SS"]] <- with(DAT, 
 		paste0(LYYY, "-", LM, "-", LD, " ", Lh, ":", Lm, ":", Ls)
@@ -542,7 +542,7 @@ as.character(unique(SEDataRAW[SEDataRAW$CSLocation %in% "Holtville","DDate"]))
 ## CA02 Holtville
 HOLTyears <- c("061607 - 061807","062008 - 062508","052409 - 060109","040809 - 041009","042309 - 042509","080609 - 080809")
 HOLT_CS_Data <- lapply(HOLTyears, function(x) {
-	DAT <- read.csv(paste0("./CDN/Updates/github/CA02 ", x, ".csv"), header=TRUE, comment.char = "", check.names = FALSE)
+	DAT <- read.csv(paste0("./data/CA02 ", x, ".csv"), header=TRUE, comment.char = "", check.names = FALSE)
 	## Format date so it is consistent across locations
 	DAT[["YYYY-MM-DD HH:MM:SS"]] <- with(DAT, 
 		paste0(LYYY, "-", LM, "-", LD, " ", Lh, ":", Lm, ":", Ls)
@@ -563,7 +563,7 @@ HOLT_CS_DataTALL$CS_Location <- "Holtville"
 ## AZ01 Logan
 FLAGyears <- c("040809 - 041109","080608 - 081008","060807 - 061007")
 FLAG_CS_Data <- lapply(FLAGyears, function(x) {
-	DAT <- read.csv(paste0("./CDN/Updates/github/AZ01 ", x, ".csv"), header=TRUE, comment.char = "", check.names = FALSE)
+	DAT <- read.csv(paste0("./data/AZ01 ", x, ".csv"), header=TRUE, comment.char = "", check.names = FALSE)
 	## Format date so it is consistent across locations
 	DAT[["YYYY-MM-DD HH:MM:SS"]] <- with(DAT, 
 		paste0(LYYY, "-", LM, "-", LD, " ", Lh, ":", Lm, ":", Ls)
@@ -589,7 +589,7 @@ singlesite_nonDAV_CSloc <- data.frame(
 singlestation_CS_Data <- lapply(1:nrow(singlesite_nonDAV_CSloc), function(x) {
 	FileName <- CS_singlesites[x,"FileName"]
 	Location <- singlesite_nonDAV_CSloc[x,"Location"]
-	DAT <- read.csv(paste0("./CDN/Updates/github/", FileName, ".csv"), header=TRUE, comment.char = "", check.names = FALSE)
+	DAT <- read.csv(paste0("./data/", FileName, ".csv"), header=TRUE, comment.char = "", check.names = FALSE)
 	## Format date so it is consistent across locations
 	DAT[["YYYY-MM-DD HH:MM:SS"]] <- with(DAT, 
 		paste0(LYYY, "-", LM, "-", LD, " ", Lh, ":", Lm, ":", Ls)
