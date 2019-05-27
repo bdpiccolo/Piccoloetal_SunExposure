@@ -3,15 +3,16 @@
 ########################################################################################################################################
 ##																																	  ##
 ##                     Circulating 25(OH)D Concentrations in Overweight and Obese Adults is Explained by Sun Exposure, 				  ##
-##												 Skin Reflectance, and Body Composition 											  ##
+##			                          Skin Reflectance, and Body Composition 					                  ##
 ##                  Brian D. Piccolo1,2 Laura M. Hall3, Charles B. Stephensen3,4 Erik R. Gertz4 and Marta D. Van Loan3,4			  ##
 ##																																	  ##
-##                                    5.	Arkansas Children’s Nutrition Center, Little Rock, AR									  ##
-##									  6.	University of Arkansas for Medical Sciences, Little Rock, AR							  ##
-##									  7.	University of California, Davis, CA														  ##
-##									  8.	USDA, ARS, Western Human Nutrition Research Center, Davis, CA							  ##
-##																																	  ##
-## 								Under Review at Current Development in Nutrition (https://academic.oup.com/cdn)						  ##
+##                                    5.	Arkansas Children’s Nutrition Center, Little Rock, AR						##
+##				      6.	University of Arkansas for Medical Sciences, Little Rock, AR					 ##
+##				      7.	University of California, Davis, CA								##
+##				      8.	USDA, ARS, Western Human Nutrition Research Center, Davis, CA					##
+##																												  ##
+## 								Accepted Current Development in Nutrition
+##                                    Published online (https://academic.oup.com/cdn/advance-article/doi/10.1093/cdn/nzz065/5499015)		##
 ##																																	  ##
 ########################################################################################################################################
 ########################################################################################################################################
@@ -215,7 +216,7 @@ colnames(MetaDAT)
 # Sex = Self reported sex of participant (1 - Female, 2 - Male)
 # Age = Age (yr) at time of enrollment
 # SREthinicity = Self reported ethnicity of participant
-# dintake3/dintake15 = Dietary vitamin D intake (UI/day; 3 and 15 represent trial week)
+# dintakei3/dintakei15 = Dietary vitamin D intake (UI/day; 3 and 15 represent trial week)
 # W3A/W15A = Skin reflectance of inner arm (*L; 3 and 15 represent trial week)
 # W3H/W15H = Skin reflectance of outside of hand between index and thumb (*L; 3 and 15 represent trial week)
 # W3F/W15F = Skin reflectance of forehead (*L; 3 and 15 represent trial week)
